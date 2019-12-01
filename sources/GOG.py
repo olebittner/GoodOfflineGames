@@ -1,36 +1,26 @@
-from urllib.parse import urlencode
-from urllib.request import Request, OpenerDirector
-
-import pymongo.collection
-import getpass
-import logging
-import time
-import os
-import sys
-import threading
-import logging
-import contextlib
-import json
-import html5lib
-import pprint
-import time
-import zipfile
-import hashlib
-import getpass
 import codecs
-import io
-import datetime
+import contextlib
+import getpass
+import http.cookiejar as cookiejar
+import json
+import logging
+import os
 import shutil
 import socket
+import sys
+import threading
+import time
 import xml.etree.ElementTree
-from queue import Queue
-import http.cookiejar as cookiejar
 from http.client import BadStatusLine
+from io import StringIO
+from itertools import zip_longest
+from queue import Queue
 from urllib.parse import urlparse, urlencode, unquote
 from urllib.request import HTTPCookieProcessor, HTTPError, URLError, build_opener, Request
-from itertools import zip_longest
-from io import StringIO
-import codecs
+
+import html5lib
+import pymongo.collection
+
 try:
     import cPickle as pickle
 except ImportError:
