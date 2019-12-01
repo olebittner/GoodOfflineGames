@@ -88,9 +88,9 @@ def login(game_source, auth_provider, source_modules: dict, authentication_provi
         error('Invalid game source: {}'.format(game_source))
         return 1
     source = getattr(source_modules[game_source], game_source)
+    print('Please enter your {} credentials!'.format(game_source))
     user, auth = source.interactive_login()
     if auth is not None:
-        print('Please enter your {} credentials!'.format(game_source))
         authentication_providers[auth_provider].save_authentication(game_source, user, auth)
     else:
         error('Login failed!')
