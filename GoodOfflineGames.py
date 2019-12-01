@@ -1,0 +1,91 @@
+import sys
+
+import pymongo
+import importlib
+import pkgutil
+import logging
+import argparse
+
+logging.basicConfig(level=logging.DEBUG)
+info = logging.info
+warn = logging.warning
+debug = logging.debug
+error = logging.error
+log_exception = logging.exception
+
+
+class GoodOfflineGames:
+
+    def __init__(self, source_modules, authentication_providers) -> None:
+        self.source_modules = source_modules
+        self.authentication_providers = authentication_providers
+        super().__init__()
+
+    def update(self):
+        for source, source_module in self.source_modules.items():
+            if source_module.needs_authentication:
+                for _, provider in self.authentication_providers.items():
+                    for user, auth in provider.get_next_login(source):
+                        info("Getting Games from {} for user '{}'".format(source, user))
+                        getattr(source_module, source)(game_collection, auth)
+
+
+def parse_arguments(argv):
+    parser = argparse.ArgumentParser()
+
+    cmd_parser = parser.add_subparsers(dest='cmd', title='Commands')
+    login_parser = cmd_parser.add_parser('login', help='Login to one of the game sources')
+    login_parser.add_argument('action', choices=['add', 'remove'])
+    login_parser.add_argument('auth_provider', action='store', help='id of authentication providers', nargs='?', default=None)
+    login_parser.add_argument('game_source', action='store', help='id of game source', nargs='?', default=None)
+
+    return parser.parse_args(argv[1:])
+
+
+def login(game_source, auth_provider, source_modules: dict, authentication_providers: dict):
+    if game_source not in source_modules.keys():
+        error('Invalid game source: {}'.format(game_source))
+        return 1
+    source = getattr(source_modules[game_source], game_source)
+    user, auth = source.interactive_login()
+    if auth is not None:
+        print('Please enter your {} credentials!'.format(game_source))
+        authentication_providers[auth_provider].save_authentication(game_source, user, auth)
+    else:
+        error('Login failed!')
+        return 1
+
+
+if __name__ == '__main__':
+    database = pymongo.MongoClient('mongodb://localhost:27017/')['GoodOfflineGames']
+    game_collection = database['Games']
+
+    info('importing game sources...')
+    source_modules = {}
+    for finder, name, ispkg in pkgutil.iter_modules(['sources']):
+        debug('importing ' + name)
+        module = importlib.import_module('sources.' + name)
+        source_modules[name] = module
+    info('successfully imported {} sources'.format(len(source_modules)))
+
+    info('importing authentication providers...')
+    authentication_providers = {}
+    for finder, name, ispkg in pkgutil.iter_modules(['authentication_providers']):
+        debug('importing ' + name)
+        module = importlib.import_module('authentication_providers.' + name)
+        authentication_providers[name] = (getattr(module, name)())
+    info('successfully imported {} providesr'.format(len(authentication_providers)))
+
+    args = parse_arguments(sys.argv)
+
+    if args.cmd == 'login':
+        if args.auth_provider not in authentication_providers.keys():
+            error('Invalid authentication provider: {}'.format(args.auth_provider))
+            sys.exit(1)
+        else:
+            if args.action == 'add':
+                sys.exit(login(args.game_source, args.auth_provider, source_modules, authentication_providers))
+            elif args.action == 'remove':
+                sys.exit(authentication_providers[args.auth_provider]
+                         .remove_authentication(args.game_source, input("Username to remove: ")))
+
