@@ -16,6 +16,7 @@ from configparser import ConfigParser
 
 FILE = 'authentication.file'
 
+
 class File:
     def get_next_login(self, source_id):
         config = ConfigParser()

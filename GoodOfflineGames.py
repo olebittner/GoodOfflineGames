@@ -12,14 +12,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import argparse
+import importlib
+import logging
 import os
+import pkgutil
 import sys
 
 import pymongo
-import importlib
-import pkgutil
-import logging
-import argparse
 
 logging.basicConfig(level=logging.DEBUG)
 info = logging.info
@@ -70,7 +70,8 @@ def parse_arguments(argv):
     cmd_parser = parser.add_subparsers(dest='cmd', title='Commands')
     login_parser = cmd_parser.add_parser('login', help='Login to one of the game sources')
     login_parser.add_argument('action', choices=['add', 'remove'])
-    login_parser.add_argument('auth_provider', action='store', help='id of authentication providers', nargs='?', default=None)
+    login_parser.add_argument('auth_provider', action='store', help='id of authentication providers', nargs='?',
+                              default=None)
     login_parser.add_argument('game_source', action='store', help='id of game source', nargs='?', default=None)
 
     update_parser = cmd_parser.add_parser('update')
@@ -134,4 +135,3 @@ if __name__ == '__main__':
             sys.exit(client.update())
         if args.cmd == 'download':
             sys.exit(client.download(args.path))
-
