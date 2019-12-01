@@ -67,18 +67,18 @@ class GoodOfflineGames:
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
 
-    cmd_parser = parser.add_subparsers(dest='cmd', title='Commands')
+    cmd_parser = parser.add_subparsers(dest='cmd', title='Commands', required=True)
     login_parser = cmd_parser.add_parser('login', help='Login to one of the game sources')
     login_parser.add_argument('action', choices=['add', 'remove'])
-    login_parser.add_argument('auth_provider', action='store', help='id of authentication providers', nargs='?',
+    login_parser.add_argument('auth_provider', action='store', help='id of authentication providers',
                               default=None)
-    login_parser.add_argument('game_source', action='store', help='id of game source', nargs='?', default=None)
+    login_parser.add_argument('game_source', action='store', help='id of game source', default=None)
 
-    update_parser = cmd_parser.add_parser('update')
+    update_parser = cmd_parser.add_parser('update', help='Update game database')
     update_parser.add_argument('game_source', action='store', help='id of game source', nargs='?', default=None)
 
-    download_parser = cmd_parser.add_parser('download')
-    download_parser.add_argument('path', action='store')
+    download_parser = cmd_parser.add_parser('download', help='Download games listed in the database')
+    download_parser.add_argument('path', action='store', help='Destination directory for downloads')
 
     return parser.parse_args(argv[1:])
 
