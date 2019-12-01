@@ -1,3 +1,4 @@
+import os
 import sys
 
 import pymongo
@@ -21,13 +22,32 @@ class GoodOfflineGames:
         self.authentication_providers = authentication_providers
         super().__init__()
 
-    def update(self):
+    def get_next_source(self):
         for source, source_module in self.source_modules.items():
             if source_module.needs_authentication:
                 for _, provider in self.authentication_providers.items():
                     for user, auth in provider.get_next_login(source):
-                        info("Getting Games from {} for user '{}'".format(source, user))
-                        getattr(source_module, source)(game_collection, auth)
+                        yield source, user, getattr(source_module, source)(game_collection, user, auth)
+
+    def update(self):
+        exit_code = 0
+        for sname, user, source in self.get_next_source():
+            info("Updating Games from {} for user '{}'".format(sname, user))
+            exit_code = max(source.update_database(['windows', 'linux'], ['en', 'de']), exit_code)
+        return exit_code
+
+    def download(self, path, groupsource=True):
+        exit_code = 0
+        for sname, user, source in self.get_next_source():
+            info("Download Games from {} for user '{}'".format(sname, user))
+            if groupsource:
+                sdir = os.path.join(path, sname)
+            else:
+                sdir = path
+            if not os.path.isdir(sdir):
+                os.makedirs(sdir)
+            source.download(sdir)
+        return exit_code
 
 
 def parse_arguments(argv):
@@ -38,6 +58,12 @@ def parse_arguments(argv):
     login_parser.add_argument('action', choices=['add', 'remove'])
     login_parser.add_argument('auth_provider', action='store', help='id of authentication providers', nargs='?', default=None)
     login_parser.add_argument('game_source', action='store', help='id of game source', nargs='?', default=None)
+
+    update_parser = cmd_parser.add_parser('update')
+    update_parser.add_argument('game_source', action='store', help='id of game source', nargs='?', default=None)
+
+    download_parser = cmd_parser.add_parser('download')
+    download_parser.add_argument('path', action='store')
 
     return parser.parse_args(argv[1:])
 
@@ -88,4 +114,10 @@ if __name__ == '__main__':
             elif args.action == 'remove':
                 sys.exit(authentication_providers[args.auth_provider]
                          .remove_authentication(args.game_source, input("Username to remove: ")))
+    else:
+        client = GoodOfflineGames(source_modules, authentication_providers)
+        if args.cmd == 'update':
+            sys.exit(client.update())
+        if args.cmd == 'download':
+            sys.exit(client.download(args.path))
 

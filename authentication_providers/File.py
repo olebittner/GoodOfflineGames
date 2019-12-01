@@ -19,6 +19,7 @@ class File:
         config.set(source_id, user, auth)
         with open(FILE, 'w') as f:
             config.write(f)
+        return 0
 
     def remove_authentication(self, source_id, user):
         config = ConfigParser()
