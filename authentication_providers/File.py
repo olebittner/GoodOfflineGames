@@ -18,12 +18,13 @@ FILE = 'authentication.file'
 
 
 class File:
-    def get_next_login(self, source_id):
+    def get_next_login(self, source_id, users=None):
         config = ConfigParser()
         config.read(FILE)
         if source_id in config.sections():
             for entry in config.options(source_id):
-                yield entry, config.get(source_id, entry)
+                if not users or entry in users:
+                    yield entry, config.get(source_id, entry)
 
     def save_authentication(self, source_id, user, auth):
         config = ConfigParser()
