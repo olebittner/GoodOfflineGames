@@ -414,6 +414,9 @@ class HumbleBundle:
         for download in downloads:
             for index, download_struct in enumerate(download['download_struct']):
                 if 'url' in download_struct:
+                    if 'web' in download['download_struct'][index]['url']:
+                        url = download['download_struct'][index]['url']['web']
+                        download['download_struct'][index]['name_unsafe'] = basename(urlparse(url).path)
                     download['download_struct'][index]['url'] = list(download_struct['url'].keys())
                 else:
                     download['download_struct'].remove(download_struct)
