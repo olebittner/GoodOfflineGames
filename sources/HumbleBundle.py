@@ -391,9 +391,11 @@ class HumbleBundle:
     @staticmethod
     def interactive_login():
         username = input("Username: ")
-        print("Open %s in your browser, login and paste the value of the cookie '%s' below." % (HB_LOGIN_URL, '_simpleauth_sess'))
+        print("Open %s in your browser, login and paste the value of the cookie '%s' below." %
+              (HB_LOGIN_URL, '_simpleauth_sess'))
         print("Your cookie should look something like:")
-        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|1234567896|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+              "|1234567896|XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
         session_cookie = input("Session Cookie: ")
 
         jar = HumbleBundle.recreate_cookiejar(session_cookie)
