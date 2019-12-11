@@ -33,50 +33,54 @@ log_exception = logging.exception
 
 class GoodOfflineGames:
 
-    def __init__(self, source_modules, authentication_providers, database_collection) -> None:
-        self.source_modules = source_modules
+    def __init__(self, content_providers, authentication_providers, database_collection) -> None:
+        self.content_providers = content_providers
         self.authentication_providers = authentication_providers
         self.collection = database_collection
         super().__init__()
 
-    def get_next_source(self, sources, authentications, users):
-        for source_name in sources:
-            if source_name in self.source_modules.keys():
-                if self.source_modules[source_name].needs_authentication:
-                    for provider_name in authentications:
-                        if provider_name in self.authentication_providers.keys():
-                            for user, auth in self.authentication_providers[provider_name].get_next_login(source_name, users):
-                                yield source_name, user, getattr(self.source_modules[source_name], source_name)(self.collection, user, auth)
+    def get_next_content_provider(self, sources, authentications, users):
+        for content_provider_name in sources:
+            if content_provider_name in self.content_providers.keys():
+                if self.content_providers[content_provider_name].needs_authentication:
+                    for auth_provider_name in authentications:
+                        if auth_provider_name in self.authentication_providers.keys():
+                            for user, auth in self.authentication_providers[auth_provider_name]\
+                                    .get_next_login(content_provider_name, users):
+                                yield content_provider_name, user, \
+                                      getattr(self.content_providers[content_provider_name],
+                                              content_provider_name)(self.collection, user, auth)
                         else:
-                            error('{} is not a valid authentication provider: {}', provider_name,
+                            error('{} is not a valid authentication provider: {}', auth_provider_name,
                                   self.authentication_providers.keys())
                             return
                 else:
-                    yield source_name, None, getattr(self.source_modules[source_name], source_name)(self.collection, None, None)
+                    yield content_provider_name, None, getattr(self.content_providers[content_provider_name],
+                                                               content_provider_name)(self.collection, None, None)
             else:
-                error('{} is not a valid source: {}', source_name, self.source_modules.keys())
+                error('{} is not a valid content provider: {}', content_provider_name, self.content_providers.keys())
                 return
 
-    def update(self, game_source, provider_source, users):
+    def update(self, content_provider, provider_source, users):
         exit_code = 0
-        if not game_source or len(game_source) <= 0:
-            game_source = self.source_modules
+        if not content_provider or len(content_provider) <= 0:
+            content_provider = self.content_providers
         if not provider_source or len(provider_source) <= 0:
             provider_source = self.authentication_providers
-        for sname, user, source in self.get_next_source(game_source, provider_source, users):
+        for sname, user, source in self.get_next_content_provider(content_provider, provider_source, users):
             info("Updating Games from {} for user '{}'".format(sname, user))
             exit_code = max(source.update_database(['windows', 'linux', 'android'], ['en', 'de']), exit_code)
         return exit_code
 
-    def download(self, path, game_source, provider_source, users, groupsource=True):
+    def download(self, path, content_provider, provider_source, users, group_by_content_provider=True):
         exit_code = 0
-        if not game_source or len(game_source) <= 0:
-            game_source = self.source_modules
+        if not content_provider or len(content_provider) <= 0:
+            content_provider = self.content_providers
         if not provider_source or len(provider_source) <= 0:
             provider_source = self.authentication_providers
-        for sname, user, source in self.get_next_source(game_source, provider_source, users):
+        for sname, user, source in self.get_next_content_provider(content_provider, provider_source, users):
             info("Download Games from {} for user '{}'".format(sname, user))
-            if groupsource:
+            if group_by_content_provider:
                 sdir = os.path.join(path, sname)
             else:
                 sdir = path
@@ -90,35 +94,41 @@ def parse_arguments(argv):
     cmd_parser = parser.add_subparsers(dest='cmd', title='Commands', required=True)
     login_parser = cmd_parser.add_parser('login', help='Login to one of the game sources')
     login_parser.add_argument('action', choices=['add', 'remove'])
-    login_parser.add_argument('auth_provider', action='store', help='id of authentication providers',
+    login_parser.add_argument('auth', action='store',
+                              help='specify the authentication provider to store the credentials', default=None)
+    login_parser.add_argument('content', action='store', help='specify the content provider to authenticate',
                               default=None)
-    login_parser.add_argument('game_source', action='store', help='id of game source', default=None)
 
     update_parser = cmd_parser.add_parser('update', help='Update game database')
-    update_parser.add_argument('-s', '--source', action='store', help='list of game source', nargs='+', default=None)
-    update_parser.add_argument('-a', '--authentication', help='list of authentication providers', nargs='+',
-                               default=None)
-    update_parser.add_argument('-u', '--user', action='store', help='list of users', nargs='+', default=None)
+    update_parser.add_argument('-c', '--content', action='store', help='specify one or more content providers',
+                               nargs='+', default=None)
+    update_parser.add_argument('-a', '--auth', help='specify one or more authentication providers',
+                               nargs='+', default=None)
+    update_parser.add_argument('-u', '--user', action='store', help='specify one or more users',
+                               nargs='+', default=None)
 
     download_parser = cmd_parser.add_parser('download', help='Download games listed in the database')
-    download_parser.add_argument('-p','--path', action='store', help='Destination directory for downloads', default='Games')
-    download_parser.add_argument('-s', '--source', action='store', help='list of game source', nargs='+', default=None)
-    download_parser.add_argument('-a', '--authentication', help='list of authentication providers', nargs='+',
-                                 default=None)
-    download_parser.add_argument('-u', '--user', action='store', help='list of users', nargs='+', default=None)
+    download_parser.add_argument('-p', '--path', action='store', help='Destination directory for downloads',
+                                 default='Games')
+    download_parser.add_argument('-c', '--content', action='store', help='specify one or more content providers',
+                                 nargs='+', default=None)
+    download_parser.add_argument('-a', '--auth', help='specify one or more authentication providers',
+                                 nargs='+', default=None)
+    download_parser.add_argument('-u', '--user', action='store', help='specify one or more users',
+                                 nargs='+', default=None)
 
     return parser.parse_args(argv[1:])
 
 
-def login(game_source, auth_provider, source_modules: dict, authentication_providers: dict):
-    if game_source not in source_modules.keys():
-        error('Invalid game source: {}'.format(game_source))
+def login(content_provider, auth_provider, content_providers: dict, auth_providers: dict):
+    if content_provider not in content_providers.keys():
+        error('Invalid game source: {}'.format(content_provider))
         return 1
-    source = getattr(source_modules[game_source], game_source)
-    print('Please enter your {} credentials!'.format(game_source))
+    source = getattr(content_providers[content_provider], content_provider)
+    print('Please enter your {} credentials!'.format(content_provider))
     user, auth = source.interactive_login()
     if auth is not None:
-        authentication_providers[auth_provider].save_authentication(game_source, user, auth)
+        auth_providers[auth_provider].save_authentication(content_provider, user, auth)
     else:
         error('Login failed!')
         return 1
@@ -128,13 +138,13 @@ if __name__ == '__main__':
     database = pymongo.MongoClient('mongodb://localhost:27017/')['GoodOfflineGames']
     game_collection = database['Games']
 
-    info('importing game sources...')
-    source_modules = {}
-    for finder, name, ispkg in pkgutil.iter_modules(['sources']):
+    info('importing content providers...')
+    content_providers = {}
+    for finder, name, ispkg in pkgutil.iter_modules(['content_providers']):
         debug('importing ' + name)
-        module = importlib.import_module('sources.' + name)
-        source_modules[name] = module
-    info('successfully imported {} sources'.format(len(source_modules)))
+        module = importlib.import_module('content_providers.' + name)
+        content_providers[name] = module
+    info('successfully imported {} content providers'.format(len(content_providers)))
 
     info('importing authentication providers...')
     authentication_providers = {}
@@ -142,23 +152,23 @@ if __name__ == '__main__':
         debug('importing ' + name)
         module = importlib.import_module('authentication_providers.' + name)
         authentication_providers[name] = (getattr(module, name)())
-    info('successfully imported {} providesr'.format(len(authentication_providers)))
+    info('successfully imported {} providers'.format(len(authentication_providers)))
 
     args = parse_arguments(sys.argv)
 
     if args.cmd == 'login':
-        if args.auth_provider not in authentication_providers.keys():
-            error('Invalid authentication provider: {}'.format(args.auth_provider))
+        if args.auth not in authentication_providers.keys():
+            error('Invalid authentication provider: {}'.format(args.auth))
             sys.exit(1)
         else:
             if args.action == 'add':
-                sys.exit(login(args.game_source, args.auth_provider, source_modules, authentication_providers))
+                sys.exit(login(args.content, args.auth, content_providers, authentication_providers))
             elif args.action == 'remove':
                 sys.exit(authentication_providers[args.auth_provider]
                          .remove_authentication(args.game_source, input("Username to remove: ")))
     else:
-        client = GoodOfflineGames(source_modules, authentication_providers, game_collection)
+        client = GoodOfflineGames(content_providers, authentication_providers, game_collection)
         if args.cmd == 'update':
-            sys.exit(client.update(args.source, args.authentication, args.user))
+            sys.exit(client.update(args.content, args.auth, args.user))
         if args.cmd == 'download':
-            sys.exit(client.download(args.path, args.source, args.authentication, args.user))
+            sys.exit(client.download(args.path, args.content, args.auth, args.user))
