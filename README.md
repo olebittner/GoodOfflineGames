@@ -111,7 +111,7 @@ optional arguments:
 
 ## Credit
 The idea for this tool was inspired by [Eddies gogrepo](https://github.com/eddie3/gogrepo).
-In fact the GOG integration for this tool is a modified version his script.
+In fact the GOG integration for this tool is a modified version of his script.
 
 ## License
 [GPLv3+](./LICENSE)
