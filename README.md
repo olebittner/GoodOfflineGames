@@ -14,7 +14,7 @@ Make sure you have `Python 3` and `pip` installed. You also need a running
 This example use case configures the tool to download games from one GOG
 account. If you want to download games from another provider simply 
 replace `GOG` with the provider of your choice.
-You can repeat the first command to setup multiple users and/or 
+You can repeat the `login` command to setup multiple users and/or 
 providers
 ```bash
 # Clone this git and enter the directory
