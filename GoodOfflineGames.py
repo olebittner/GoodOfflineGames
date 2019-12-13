@@ -22,6 +22,7 @@ import pkgutil
 import sys
 
 import pymongo
+from pymongo.errors import ServerSelectionTimeoutError
 
 logging.basicConfig(level=logging.DEBUG)
 info = logging.info
@@ -90,6 +91,8 @@ class GoodOfflineGames:
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
+    parser.add_argument('--db', '--database', action='store', help='Specify a MongoDB using a Connection String',
+                        default='mongodb://localhost:27017/')
 
     cmd_parser = parser.add_subparsers(dest='cmd', title='Commands', required=True)
     login_parser = cmd_parser.add_parser('login', help='Login to one of the game sources')
@@ -135,7 +138,17 @@ def login(content_provider, auth_provider, content_providers: dict, auth_provide
 
 
 if __name__ == '__main__':
-    database = pymongo.MongoClient('mongodb://localhost:27017/')['GoodOfflineGames']
+    args = parse_arguments(sys.argv)
+    client = pymongo.MongoClient(args.db, serverSelectionTimeoutMS=5000)
+
+    try:
+        client.server_info()
+    except ServerSelectionTimeoutError as err:
+        error("Could not connect to database")
+        debug(err)
+        sys.exit(1)
+
+    database = client['GoodOfflineGames']
     game_collection = database['Games']
 
     info('importing content providers...')
@@ -153,8 +166,6 @@ if __name__ == '__main__':
         module = importlib.import_module('authentication_providers.' + name)
         authentication_providers[name] = (getattr(module, name)())
     info('successfully imported {} providers'.format(len(authentication_providers)))
-
-    args = parse_arguments(sys.argv)
 
     if args.cmd == 'login':
         if args.auth not in authentication_providers.keys():
