@@ -1,6 +1,6 @@
 # GoodOfflineGames
 
-Command line tool to download your drm-free game collection for full offline access.
+Command line tool to download your drm-free game collections for offline access.
 
 It provides support for multiple accounts and is easily expandable to
 add more content and authentication providers.
