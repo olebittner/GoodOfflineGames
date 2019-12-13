@@ -24,7 +24,7 @@ import sys
 import pymongo
 from pymongo.errors import ServerSelectionTimeoutError
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 info = logging.info
 warn = logging.warning
 debug = logging.debug
