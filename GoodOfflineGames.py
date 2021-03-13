@@ -175,8 +175,8 @@ if __name__ == '__main__':
             if args.action == 'add':
                 sys.exit(login(args.content, args.auth, content_providers, authentication_providers))
             elif args.action == 'remove':
-                sys.exit(authentication_providers[args.auth_provider]
-                         .remove_authentication(args.game_source, input("Username to remove: ")))
+                sys.exit(authentication_providers[args.auth]
+                         .remove_authentication(args.content, input("Username to remove: ")))
     else:
         client = GoodOfflineGames(content_providers, authentication_providers, game_collection)
         if args.cmd == 'update':
