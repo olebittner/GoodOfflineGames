@@ -61,7 +61,7 @@ GOG_MEDIA_TYPE_GAME = '1'
 GOG_MEDIA_TYPE_MOVIE = '2'
 
 # HTTP request settings
-HTTP_FETCH_DELAY = 1  # in seconds
+HTTP_FETCH_DELAY = 0.5  # in seconds
 HTTP_RETRY_DELAY = 5  # in seconds
 HTTP_RETRY_COUNT = 3
 HTTP_GAME_DOWNLOADER_THREADS = 4
