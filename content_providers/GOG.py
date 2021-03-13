@@ -661,6 +661,9 @@ class GOG:
                                     assert out.tell() == end + 1
                         except HTTPError as e:
                             error("failed to download %s, byte_range=%s" % (os.path.basename(path), str(se)))
+                        except AttributeError as e:
+                            error("failed to download %s, byte_range=%s, Error: %s" %
+                                  (os.path.basename(path), str(se), e))
                 except IOError as e:
                     with lock:
                         print('!', path, file=sys.stderr)
